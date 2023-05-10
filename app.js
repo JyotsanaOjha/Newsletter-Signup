@@ -37,28 +37,44 @@ app.post("/", function (req, res) {
 
     const jsonData = JSON.stringify(data); // Before sending data to the mailchimp server, we have to convert it into JSON format 
 
-    const url = "https://us14.api.mailchimp.com/3.0/lists/388213e822";      // us14 here specify the server prefix. it should be the same in the api key as well.
-
+    const url = "https://us14.api.mailchimp.com/3.0/lists/"+process.env.LIST_ID;      // us14 here specify the server prefix. it should be the same in the api key as well.
+    
+    console.log("the user id is as follows>>"+ process.env.USER_ID );
+    
     const options = {
         method: "POST",
-        auth: "jyotsana:2d8b029d876358676a9623df218bae65-us14"  //user-->"any string:API key"     
+        //user-->"any string:API key"     
+        auth: process.env.USER_ID + ":" + process.env.API_KEY
     }
 
 
+    
     const request = https.request(url, options, function (response) {
 
-        if (response.statusCode === 200) {
-            // res.send("Successfully subscribed!");
-            res.sendFile(__dirname + "/success.html");
-        } else {
-            // res.send("There was an error with signing up, please try again!");
-            res.sendFile(__dirname + "/failure.html");
-        }
+        console.log("response.statusCode>>>" + response.statusCode);
 
         response.on("data", function (data) {
 
-            console.log(JSON.parse(data));
+            var respData = JSON.parse(data);
+
+            console.log("Created Count>>" + respData.total_created);
+            console.log("Updated Count>>" + respData.total_updated);
+            console.log("Error Count>>" + respData.error_count);
+            
+            if(respData.error_count == 1) {
+                console.log(respData.errors);
+            }
+
+            if (response.statusCode === 200 && respData.total_created == 1) {
+                // res.send("Successfully subscribed!");
+                res.sendFile(__dirname + "/success.html");
+            } else {
+                // res.send("There was an error with signing up, please try again!");
+                res.sendFile(__dirname + "/failure.html");
+            }
+    
         })
+
     })
 
     request.write(jsonData);
@@ -84,9 +100,6 @@ app.listen(process.env.PORT || 3000, function () {
 })
 
 
-
-// API Key:  2d8b029d876358676a9623df218bae65-us14
-// Audience Id/List Id:   388213e822  
 
 
 
